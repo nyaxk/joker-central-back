@@ -3,7 +3,6 @@ import express from 'express'
 import {routes} from './routes'
 import cors from 'cors';
 import Queue from 'bee-queue';
-import * as redis from 'redis';
 import {Server} from "socket.io";
 import {prisma} from "@/globals";
 import {InfoStatus, InstanceStatus} from "@prisma/client";
@@ -12,12 +11,12 @@ import * as process from "process";
 
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
-console.log("REDIS_URL: ", REDIS_URL);
+console.log("REDIS_URL:", REDIS_URL);
 
 const app = express();
 
 export const InstanceQueue = new Queue('consumer-instance', {
-    redis: redis.createClient({url: REDIS_URL}),
+    redis: {url: 'redis://default:jPlKEmOCOEaDJcHgGf1IbjF4Kdnpc61i@monorail.proxy.rlwy.net:18028'},
 });
 
 const PORT: number = parseInt(process.env.PORT ?? '') || 4000;
