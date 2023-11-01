@@ -1,13 +1,13 @@
-import express, {Request, Response} from 'express'
+import express from 'express'
 import {routes} from './routes'
 import cors from 'cors';
-import * as path from "path";
 import Queue from 'bee-queue';
 import * as redis from 'redis';
 import {Server} from "socket.io";
 import {prisma} from "@/globals";
 import {InfoStatus, InstanceStatus} from "@prisma/client";
 import axios from "axios";
+import * as process from "process";
 
 const app = express();
 
@@ -21,8 +21,6 @@ app.use(express.json())
 app.use(cors())
 app.use('/static', express.static('public'))
 
-app.use(express.json())
-
 const router = express.Router();
 
 routes.forEach((route) => {
@@ -30,28 +28,15 @@ routes.forEach((route) => {
     router[method](path, ...middleware, handler as any)
 })
 
-if (process.env.NODE_ENV === 'production') {
-    router.use(express.static(path.join(__dirname, './build')))
-    router.get('*', (_: Request, res: Response) => {
-        res.sendFile(path.join(__dirname, './build', 'index.html'))
-    })
-}
-
-router.get('/test', async (_, res) => {
-    await new Promise(r => setTimeout(r, 5000));
-    return res.send("#LIVE")
-})
-
-router.get('/socket-test', (_, res) => {
-    io.emit('419a5e59-a6f1-4987-9ccb-666e1b90bf0a', {
-        lives: 10,
-        dies: 10,
-        progress: 20
-    })
-    return res.send("OK")
-})
-
 app.use('/api', router)
+
+// if (process.env.NODE_ENV === 'production') {
+//     app.use(express.static('./build'))
+//     app.get('*', (_: Request, res: Response) => {
+//         return res.sendFile(path.join(process.cwd(), './build', 'index.html'))
+//     })
+// }
+
 
 const server = app.listen(PORT, () => {
     console.log("[+] Servidor iniciado na porta:", PORT)
