@@ -5,13 +5,14 @@ import {prisma} from "@/globals";
 const PlanController = () => {
     const create = async (req: IAuthRequest, res: Response) => {
         try {
-            const {name, amount, active} = req.body;
+            const {name, amount, active, price} = req.body;
 
             await prisma.plan.create({
                 data: {
                     name,
                     amount,
-                    active
+                    active,
+                    price
                 }
             })
 

@@ -113,6 +113,7 @@ model Plan {
   id        String            @id @default(uuid())
   name      String
   amount    Decimal           @db.Decimal(9, 2)
+  price     Decimal           @db.Decimal(9, 2)
   active    Boolean
   recharges RechargeHistory[] @relation("rechargeHistoryPlan")
   createdAt        DateTime      @default(now())

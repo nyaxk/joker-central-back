@@ -15,4 +15,8 @@ export const LoginUserSchema = Joi.object({
 
 export const UpdateUserSchema = Joi.object({
     id: Joi.string().required(),
+    username: Joi.any().optional(),
+    role: Joi.any().optional(),
+    active: Joi.any().optional(),
+    credits: Joi.any().optional(),
 })
