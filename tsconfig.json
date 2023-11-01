@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "lib": ["es2017"],
+    "lib": [
+      "es2017"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
@@ -18,29 +20,35 @@
     "noUnusedParameters": true,
     "allowUnreachableCode": false,
     "noFallthroughCasesInSwitch": true,
-
     "target": "es2017",
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
-
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-
     "baseUrl": "src",
     "paths": {
-      "@/*": ["./*"],
-      "@globals/*": ["./*"]
+      "@/*": [
+        "./*"
+      ],
     }
   },
   "ts-node": {
-    "require": ["tsconfig-paths/register"],
+    "require": [
+      "tsconfig-paths/register"
+    ],
     "compilerOptions": {
       "module": "CommonJS"
     }
   },
-  "exclude": ["./dist/**/*", "./node_modules/**/*"]
+  "exclude": [
+    "./dist/**/*",
+    "./node_modules/**/*"
+  ],
+  "include": [
+    "./src"
+  ]
 }
