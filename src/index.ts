@@ -7,7 +7,6 @@ import {Server} from "socket.io";
 import {prisma} from "@/globals";
 import {InfoStatus, InstanceStatus} from "@prisma/client";
 import axios from "axios";
-import * as process from "process";
 
 const app = express();
 
