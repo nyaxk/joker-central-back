@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  OWNER
+}
+
+enum InstanceStatus {
+  PAUSED
+  COMPLETED
+  CANCELLED
+  PROGRESS
+  WAITING
+}
+
+enum InfoStatus {
+  LIVE
+  DIE
+  TESTING
+}
+
+enum GatewayStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id              String            @id @default(uuid())
+  username        String            @unique
+  password        String
+  active          Boolean           @default(false)
+  role            UserRole          @default(USER)
+  credits         Decimal?          @db.Decimal(9, 2)
+  token           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  rechargeHistory RechargeHistory[] @relation("rechargeHistory")
+  instances       Instance[]        @relation("instances")
+}
+
+model RechargeHistory {
+  id            String   @id @default(uuid())
+  accredited    Boolean  @default(false)
+  method        String
+  transactionId String?
+  user          User     @relation("rechargeHistory", fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  plan          Plan    @relation("rechargeHistoryPlan", fields: [planId], references: [id])
+  planId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Instance {
+  id            String         @id @default(uuid())
+  status        InstanceStatus
+  statusMessage String?
+  lives         Int?
+  dies          Int?
+  progress      Int?
+  infos         Info[]         @relation("instanceInfos")
+  user          User           @relation("instances", fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  gateway       Gateway?       @relation("instanceGateway", fields: [gatewayId], references: [id])
+  gatewayId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  error         Errors?
+}
+
+model Info {
+  id         String     @id @default(uuid())
+  cc         String
+  status     InfoStatus
+  instance   Instance   @relation("instanceInfos", fields: [instanceId], references: [id], onDelete: Cascade)
+  instanceId String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Gateway {
+  id               String        @id @default(uuid())
+  status           GatewayStatus
+  apiUrl           String
+  expectedResponse String
+  name             String
+  instancesUsing   Instance[]    @relation("instanceGateway")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Errors {
+  id           String   @id @default(uuid())
+  errorMessage String
+  instance     Instance @relation(fields: [instanceId], references: [id])
+  instanceId   String   @unique
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Plan {
+  id        String            @id @default(uuid())
+  name      String
+  amount    Decimal           @db.Decimal(9, 2)
+  active    Boolean
+  recharges RechargeHistory[] @relation("rechargeHistoryPlan")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
