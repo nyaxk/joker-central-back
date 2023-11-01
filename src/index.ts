@@ -8,6 +8,9 @@ import {Server} from "socket.io";
 import {prisma} from "@/globals";
 import {InfoStatus, InstanceStatus} from "@prisma/client";
 import axios from "axios";
+import * as process from "process";
+
+console.log("REDIS_URL: ", process.env.REDIS_URL);
 
 const app = express();
 
