@@ -10,12 +10,14 @@ import {InfoStatus, InstanceStatus} from "@prisma/client";
 import axios from "axios";
 import * as process from "process";
 
-console.log("REDIS_URL: ", process.env.REDIS_URL);
+
+const REDIS_URL = process.env.REDIS_URL ?? '';
+console.log("REDIS_URL: ", REDIS_URL);
 
 const app = express();
 
 export const InstanceQueue = new Queue('consumer-instance', {
-    redis: redis.createClient({url: process.env.REDIS_URL ?? ''}),
+    redis: redis.createClient({url: REDIS_URL}),
 });
 
 const PORT: number = parseInt(process.env.PORT ?? '') || 4000;
