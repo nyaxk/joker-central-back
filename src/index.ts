@@ -30,6 +30,11 @@ routes.forEach((route) => {
     router[method](path, ...middleware, handler as any)
 })
 
+router.get('/test', async (_, res) => {
+    await new Promise(r => setTimeout(r, 5000));
+    return res.send("#LIVE")
+})
+
 app.use('/api', router)
 
 // if (process.env.NODE_ENV === 'production') {
@@ -107,6 +112,10 @@ InstanceQueue.process(10000, async function (job: any, done: any) {
                     id: instanceId
                 }
             })
+
+            if (!instance) {
+                return done(null, 'Instance not found !');
+            }
 
             if (instance?.status === InstanceStatus.PAUSED || instance?.status === InstanceStatus.CANCELLED) {
                 return done(null, instance?.status)
@@ -241,7 +250,7 @@ InstanceQueue.process(10000, async function (job: any, done: any) {
 
         return done(null, 'Success');
     } catch (e: any) {
-        await prisma.instance.update({
+        const instance = await prisma.instance.update({
             where: {
                 id: job.data.instance
             },
@@ -249,6 +258,14 @@ InstanceQueue.process(10000, async function (job: any, done: any) {
                 status: InstanceStatus.CANCELLED,
                 statusMessage: "Houve um erro, tente novamente."
             }
+        })
+
+        io.emit(instanceId, {
+            lives: instance.lives,
+            dies: instance.dies,
+            progress: instance.progress,
+            status: InstanceStatus.CANCELLED,
+            statusMessage: "Houve um erro, tente novamente."
         })
 
         await prisma.errors.create({

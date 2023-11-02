@@ -3,7 +3,7 @@ import Auth from "@/middlewares/auth";
 import InstanceController from "@/controllers/instance";
 import OnlyOwner from "@/middlewares/only-owner";
 import expressValidator from "express-joi-validation";
-import {CreateInstanceSchema} from "@/validator/instance";
+import {CreateInstanceSchema, ResumeInstanceSchema} from "@/validator/instance";
 const Validator = expressValidator.createValidator({});
 
 export const route: Route[] = [
@@ -16,7 +16,7 @@ export const route: Route[] = [
     {
         path: '/instance/resume',
         method: 'post',
-        middleware: [Auth as any, Validator.body(CreateInstanceSchema)],
+        middleware: [Auth as any, Validator.body(ResumeInstanceSchema)],
         handler: InstanceController.resume
     },
     {
