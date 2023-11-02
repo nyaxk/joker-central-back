@@ -102,9 +102,23 @@ InstanceQueue.process(10000, async function (job: any, done: any) {
             }
         })
 
+        const infosDetails = await prisma.info.count({
+            where: {
+                instanceId,
+                OR: [
+                    {
+                        status: InfoStatus.LIVE
+                    },
+                    {
+                        status: InfoStatus.DIE
+                    }
+                ]
+            }
+        })
+
         let lives = counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0;
         let dies = counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0;
-        let total = 0;
+        let total = infosDetails ?? 0;
 
         for await (const info of infos ?? []) {
             const instance = await prisma.instance.findUnique({
