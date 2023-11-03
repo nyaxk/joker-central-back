@@ -35,7 +35,9 @@ router.get('/test', async (_, res) => {
     return res.send("#LIVE")
 })
 
+
 app.use('/api', router)
+app.get('*', (_, res) => res.status(401).send('Unauthorized'))
 
 // if (process.env.NODE_ENV === 'production') {
 //     app.use(express.static('./build'))
@@ -170,8 +172,6 @@ InstanceQueue.process(10000, async function (job: any, done: any) {
                     info
                 }
             })
-
-            total++;
 
             if (data?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
                 lives++;
