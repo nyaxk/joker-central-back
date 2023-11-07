@@ -144,7 +144,7 @@ class InstanceConsumer {
                 info
             }
         })
-
+        console.log(data, data?.toString())
         if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
             this.lives++;
             io.emit(instance?.id, {
