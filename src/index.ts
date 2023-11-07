@@ -8,6 +8,7 @@ import * as process from "process";
 import {prisma} from "@/globals";
 import {InstanceStatus} from "@prisma/client";
 import {instanceConsumer} from "@/consumers";
+import axios from "axios";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
@@ -35,11 +36,8 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
-    function randomIntFromInterval(min: number, max: number) { // min and max included
-        return Math.floor(Math.random() * (max - min + 1) + min)
-    }
-    await new Promise(r => setTimeout(r, randomIntFromInterval(5000 , 20000)));
-    return res.send("#LIVE")
+    const {data} = await axios.get('http://45.40.96.27/ssdsddcccdssd544/api.php?lista=5553248382378334|08|2026|276')
+    return res.send(data)
 })
 
 

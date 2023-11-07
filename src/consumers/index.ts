@@ -58,10 +58,7 @@ class InstanceConsumer {
 
         let promises = []
         for await (const info of infos ?? []) {
-            promises.push(new Promise(async(resolve) => {
-                const response = await this.CHECK(info, instanceData, infos);
-                return resolve(response)
-            }));
+            promises.push(this.CHECK(info, instanceData, infos));
         }
 
         const promiseResponse = await Promise.all(promises);
@@ -141,7 +138,7 @@ class InstanceConsumer {
             return 'Paused insufficient funds';
         }
 
-        const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info}`)
+        const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info.cc}`)
         this.total++;
 
         if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
