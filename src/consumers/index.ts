@@ -58,12 +58,15 @@ class InstanceConsumer {
 
         let promises = []
         for await (const info of infos ?? []) {
-            promises.push(this.CHECK(info, instanceData, infos));
+            promises.push(new Promise(async(resolve) => {
+                const response = await this.CHECK(info, instanceData, infos);
+                return resolve(response)
+            }));
         }
 
         const promiseResponse = await Promise.all(promises);
 
-        if (!promiseResponse?.some((inst) => inst?.includes('Paused insufficient funds'))) {
+        if (!promiseResponse?.some((inst: any) => inst?.includes('Paused insufficient funds'))) {
             const instance = await prisma.instance.findUnique({
                 where: {
                     id: instanceId
@@ -94,7 +97,6 @@ class InstanceConsumer {
     }
 
     private CHECK = async (info: Info, instanceData: any, infos: any) => {
-        this.total++;
         const instance = await prisma.instance.findUnique({
             where: {
                 id: instanceData?.id
@@ -140,7 +142,8 @@ class InstanceConsumer {
         }
 
         const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info}`)
-        console.log(data, data?.toString())
+        this.total++;
+
         if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
             this.lives++;
             io.emit(instance?.id, {

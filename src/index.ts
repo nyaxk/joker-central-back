@@ -38,8 +38,8 @@ router.get('/test', async (_, res) => {
     function randomIntFromInterval(min: number, max: number) { // min and max included
         return Math.floor(Math.random() * (max - min + 1) + min)
     }
-    await new Promise(r => setTimeout(r, randomIntFromInterval(1000, 10000)));
-    return res.send("#EV")
+    await new Promise(r => setTimeout(r, randomIntFromInterval(5000 , 20000)));
+    return res.send("#LIVE")
 })
 
 
