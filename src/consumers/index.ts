@@ -145,7 +145,7 @@ class InstanceConsumer {
             }
         })
 
-        if (data?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
+        if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
             this.lives++;
             io.emit(instance?.id, {
                 lives: this.lives,
@@ -161,7 +161,7 @@ class InstanceConsumer {
                 },
                 data: {
                     status: InfoStatus.LIVE,
-                    response: data
+                    response: data?.toString()
                 }
             })
 
@@ -200,7 +200,7 @@ class InstanceConsumer {
                 },
                 data: {
                     status: InfoStatus.DIE,
-                    response: data
+                    response: data?.toString()
                 }
             })
 
