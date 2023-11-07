@@ -50,7 +50,7 @@ const UserController = () => {
             });
 
             if (!user) {
-                return res.status(404).send('Email ou senha inválida')
+                return res.status(404).send('Usuário ou senha inválida')
             }
 
             if (!user?.active) {
@@ -60,7 +60,7 @@ const UserController = () => {
             const validatePassword = await bcrypt.compare(password, user.password);
 
             if (!validatePassword) {
-                return res.status(404).send('Email ou senha inválida')
+                return res.status(404).send('Usuário ou senha inválida')
             }
 
             const SECRET: string = process.env.SECRET || 'SECRET';
