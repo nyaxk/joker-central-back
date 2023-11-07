@@ -11,13 +11,9 @@ const InfoController = () => {
             const info = await prisma.info.findMany({
                 where: {
                     instanceId: instanceId,
-                    AND: [
-                        {
-                            OR: [
-                                {status: InfoStatus.LIVE},
-                                {status: InfoStatus.DIE},
-                            ]
-                        }
+                    OR: [
+                        {status: InfoStatus.LIVE},
+                        {status: InfoStatus.DIE},
                     ]
                 },
                 select: {
