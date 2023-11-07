@@ -31,8 +31,8 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
-
-    return res.send('Ok')
+    await new Promise(r => setTimeout(r, 5000));
+    return res.send('#Live')
 })
 
 

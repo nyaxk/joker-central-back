@@ -23,7 +23,7 @@ export const route: Route[] = [
         path: '/admin/plan',
         method: 'get',
         middleware: [Auth as any, OnlyOwner],
-        handler: PlanController.get
+        handler: PlanController.getAdmin
     },
     {
         path: '/admin/plan/:id',
@@ -31,4 +31,11 @@ export const route: Route[] = [
         middleware: [Auth as any, OnlyOwner],
         handler: PlanController.remove
     },
+    {
+        path: '/plan',
+        method: 'get',
+        middleware: [],
+        handler: PlanController.get
+    },
+
 ]

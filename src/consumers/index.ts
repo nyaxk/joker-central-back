@@ -140,18 +140,19 @@ class InstanceConsumer {
 
         const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
         this.total++;
-
-        if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
+     
+        if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
             this.lives++;
             io.emit(instance?.id, {
                 lives: this.lives,
                 dies: this.dies,
                 progress: (this.total / (infos?.length ?? 0)) * 100,
                 statusMessage: null,
-                status: InstanceStatus.PROGRESS
+                status: InstanceStatus.PROGRESS,
+                info
             })
 
-            await prisma.info.update({
+            const updatedInfo = await prisma.info.update({
                 where: {
                     id: info?.id
                 },
@@ -159,6 +160,15 @@ class InstanceConsumer {
                     status: InfoStatus.LIVE,
                     response: data?.toString()
                 }
+            })
+
+            io.emit(instance?.id, {
+                lives: this.lives,
+                dies: this.dies,
+                progress: (this.total / (infos?.length ?? 0)) * 100,
+                statusMessage: null,
+                status: InstanceStatus.PROGRESS,
+                info: updatedInfo
             })
 
             await prisma.user.update({
@@ -182,15 +192,7 @@ class InstanceConsumer {
             })
         } else {
             this.dies++;
-            io.emit(instance?.id, {
-                lives: this.lives,
-                dies: this.dies,
-                progress: (this.total / (infos?.length ?? 0)) * 100,
-                statusMessage: null,
-                status: InstanceStatus.PROGRESS
-            })
-
-            await prisma.info.update({
+            const updatedInfo = await prisma.info.update({
                 where: {
                     id: info?.id
                 },
@@ -198,6 +200,15 @@ class InstanceConsumer {
                     status: InfoStatus.DIE,
                     response: data?.toString()
                 }
+            })
+
+            io.emit(instance?.id, {
+                lives: this.lives,
+                dies: this.dies,
+                progress: (this.total / (infos?.length ?? 0)) * 100,
+                statusMessage: null,
+                status: InstanceStatus.PROGRESS,
+                info: updatedInfo
             })
 
             await prisma.instance.update({

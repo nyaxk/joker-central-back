@@ -22,9 +22,30 @@ const PlanController = () => {
         }
     }
 
-    const get = async (_: IAuthRequest, res: Response) => {
+    const getAdmin = async (_: IAuthRequest, res: Response) => {
         try {
             const plans = await prisma.plan.findMany()
+
+            return res.send({plans})
+        } catch (e: any) {
+            return res.status(500).send(e?.message)
+        }
+    }
+
+    const get = async (_: IAuthRequest, res: Response) => {
+        try {
+            const plans = await prisma.plan.findMany({
+                where: {
+                    active: true
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    amount: true,
+                    price: true,
+                    createdAt: true
+                }
+            })
 
             return res.send({plans})
         } catch (e: any) {
@@ -69,7 +90,7 @@ const PlanController = () => {
         }
     }
 
-    return {create, get, update, remove}
+    return {create, get, update, remove, getAdmin}
 }
 
 export default PlanController();
