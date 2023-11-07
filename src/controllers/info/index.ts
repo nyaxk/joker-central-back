@@ -18,7 +18,8 @@ const InfoController = () => {
                 },
                 select: {
                     cc: true,
-                    status: true
+                    status: true,
+                    response: true
                 }
             })
 

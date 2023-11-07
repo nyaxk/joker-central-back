@@ -85,6 +85,7 @@ model Info {
   status     InfoStatus
   instance   Instance   @relation("instanceInfos", fields: [instanceId], references: [id], onDelete: Cascade)
   instanceId String
+  response   String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
