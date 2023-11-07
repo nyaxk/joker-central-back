@@ -141,7 +141,7 @@ class InstanceConsumer {
 
         const {data} = await axios.get(instanceData?.gateway?.apiUrl ?? '', {
             params: {
-                info
+                lista: info
             }
         })
         console.log(data, data?.toString())
