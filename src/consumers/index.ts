@@ -138,7 +138,7 @@ class InstanceConsumer {
             return 'Paused insufficient funds';
         }
 
-        const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info.cc}`)
+        const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
         this.total++;
 
         if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {

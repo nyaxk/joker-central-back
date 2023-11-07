@@ -4,6 +4,7 @@ import {LoginUserSchema, RegisterUserSchema, UpdateUserSchema} from "@/validator
 import expressValidator from 'express-joi-validation';
 import Auth from "@/middlewares/auth";
 import OnlyAdmin from "@/middlewares/role";
+import {RecaptchaMiddleware} from "@/middlewares/recaptcha";
 const Validator = expressValidator.createValidator({});
 
 export const route: Route[] = [
@@ -19,7 +20,8 @@ export const route: Route[] = [
         path: '/user/login',
         method: 'post',
         middleware: [
-            Validator.body(LoginUserSchema)
+            Validator.body(LoginUserSchema),
+            RecaptchaMiddleware
         ],
         handler: UserController.login
     },

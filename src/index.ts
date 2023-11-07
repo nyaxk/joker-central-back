@@ -8,17 +8,12 @@ import * as process from "process";
 import {prisma} from "@/globals";
 import {InstanceStatus} from "@prisma/client";
 import {instanceConsumer} from "@/consumers";
-import axios from "axios";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
 const app = express();
 
 export const InstanceQueue = new Queue('consumer-instance', {
-    redis: {url: REDIS_URL},
-});
-
-export const EmitQueue = new Queue('consumer-instance', {
     redis: {url: REDIS_URL},
 });
 
@@ -36,8 +31,8 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
-    const {data} = await axios.get('http://45.40.96.27/ssdsddcccdssd544/api.php?lista=5553248382378334|08|2026|276')
-    return res.send(data)
+
+    return res.send('Ok')
 })
 
 

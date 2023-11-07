@@ -10,7 +10,7 @@ export const RegisterUserSchema = Joi.object({
 export const LoginUserSchema = Joi.object({
     username: Joi.string().required(),
     password: Joi.string(),
-    // recaptchaToken: Joi.string().required()
+    recaptchaToken: Joi.string().required()
 })
 
 export const UpdateUserSchema = Joi.object({
