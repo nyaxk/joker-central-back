@@ -5,9 +5,9 @@ import * as process from "process";
 
 export const RecaptchaMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        if (process.env.NODE_ENV === 'development') {
-            return next();
-        }
+        // if (process.env.NODE_ENV === 'development') {
+        //     return next();
+        // }
 
         const {recaptchaToken} = req.body;
 
