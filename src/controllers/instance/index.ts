@@ -9,7 +9,9 @@ const InstanceController = () => {
         try {
             const {cc, gate} = req.body;
             const user = req?.user;
-
+            if(cc?.length > 400) {
+                return res.status(404).send('Máximo de 400 CC por instância !')
+            }
             const gateway = await prisma.gateway.findFirst({
                 where: {
                     id: gate
@@ -17,7 +19,7 @@ const InstanceController = () => {
             })
 
             if (!gateway) {
-                return res.status(404).send('Gate not found !')
+                return res.status(404).send('Gate não encontrada !')
             }
 
             const instance = await prisma.instance.create({
