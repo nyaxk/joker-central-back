@@ -4,16 +4,20 @@ import {routes} from './routes'
 import cors from 'cors';
 import Queue from 'bee-queue';
 import {Server} from "socket.io";
-import {prisma} from "@/globals";
-import {InfoStatus, InstanceStatus} from "@prisma/client";
-import axios from "axios";
 import * as process from "process";
+import {prisma} from "@/globals";
+import {InstanceStatus} from "@prisma/client";
+import {instanceConsumer} from "@/consumers";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
 const app = express();
 
 export const InstanceQueue = new Queue('consumer-instance', {
+    redis: {url: REDIS_URL},
+});
+
+export const EmitQueue = new Queue('consumer-instance', {
     redis: {url: REDIS_URL},
 });
 
@@ -31,7 +35,10 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
-    await new Promise(r => setTimeout(r, 5000));
+    function randomIntFromInterval(min: number, max: number) { // min and max included
+        return Math.floor(Math.random() * (max - min + 1) + min)
+    }
+    await new Promise(r => setTimeout(r, randomIntFromInterval(1000, 10000)));
     return res.send("#LIVE")
 })
 
@@ -39,19 +46,12 @@ router.get('/test', async (_, res) => {
 app.use('/api', router)
 app.get('*', (_, res) => res.status(401).send('Unauthorized'))
 
-// if (process.env.NODE_ENV === 'production') {
-//     app.use(express.static('./build'))
-//     app.get('*', (_: Request, res: Response) => {
-//         return res.sendFile(path.join(process.cwd(), './build', 'index.html'))
-//     })
-// }
-
 
 const server = app.listen(PORT, () => {
     console.log("[+] Servidor iniciado na porta:", PORT)
 })
 
-const io = new Server(server, {
+export const io = new Server(server, {
     cors: {
         origin: '*'
     }
@@ -67,200 +67,9 @@ io.on('connection', (socket) => {
 InstanceQueue.process(10000, async function (job: any, done: any) {
     const instanceId = job.data.instance;
     try {
-        console.log(`[Executando instância] - ${job.data.instance}`);
-        const instanceData = await prisma.instance.findUnique({
-            where: {
-                id: instanceId,
-            },
-            include: {
-                infos: {
-                    where: {
-                        status: InfoStatus.TESTING
-                    }
-                },
-                gateway: true,
-                user: true
-            }
-        })
+        console.log(`[Executando instância] - ${instanceId}`);
 
-        const infos = instanceData?.infos;
-
-        await prisma.instance.update({
-            where: {
-                id: instanceId
-            },
-            data: {
-                status: InstanceStatus.PROGRESS
-            }
-        })
-
-        const counts = await prisma.info.groupBy({
-            by: ['status'],
-            where: {
-                instanceId
-            },
-            _count: {
-                status: true
-            }
-        })
-
-        const infosDetails = await prisma.info.count({
-            where: {
-                instanceId,
-                OR: [
-                    {
-                        status: InfoStatus.LIVE
-                    },
-                    {
-                        status: InfoStatus.DIE
-                    }
-                ]
-            }
-        })
-
-        let lives = counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0;
-        let dies = counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0;
-        let total = infosDetails ?? 0;
-
-        for await (const info of infos ?? []) {
-            const instance = await prisma.instance.findUnique({
-                where: {
-                    id: instanceId
-                }
-            })
-
-            if (!instance) {
-                return done(null, 'Instance not found !');
-            }
-
-            if (instance?.status === InstanceStatus.PAUSED || instance?.status === InstanceStatus.CANCELLED) {
-                return done(null, instance?.status)
-            }
-
-            const user = await prisma.user.findUnique({
-                where: {
-                    id: instanceData?.user?.id
-                }
-            })
-
-            const credits = (user?.credits?.toNumber() ?? 0) - 1;
-
-            if (credits < 0) {
-                await prisma.instance.update({
-                    where: {
-                        id: instanceData?.id
-                    },
-                    data: {
-                        status: InstanceStatus.PAUSED,
-                        statusMessage: 'Saldo insuficiente !'
-                    }
-                })
-
-                io.emit(instanceId, {
-                    lives,
-                    dies,
-                    progress: (total / (infos?.length ?? 0)) * 100,
-                    status: InstanceStatus.PAUSED,
-                    statusMessage: 'Saldo insuficiente !'
-                })
-
-                return done(null, 'Paused insufficient funds');
-            }
-
-            const {data} = await axios.get(instanceData?.gateway?.apiUrl ?? '', {
-                params: {
-                    info
-                }
-            })
-
-            if (data?.toUpperCase().includes(instanceData?.gateway?.expectedResponse)) {
-                lives++;
-                io.emit(instanceId, {
-                    lives,
-                    dies,
-                    progress: (total / (infos?.length ?? 0)) * 100,
-                    statusMessage: null,
-                    status: InstanceStatus.PROGRESS
-                })
-
-                await prisma.info.update({
-                    where: {
-                        id: info?.id
-                    },
-                    data: {
-                        status: InfoStatus.LIVE,
-                    }
-                })
-
-                await prisma.user.update({
-                    where: {
-                        id: user?.id
-                    },
-                    data: {
-                        credits
-                    }
-                })
-
-                await prisma.instance.update({
-                    where: {
-                        id: instanceId
-                    },
-                    data: {
-                        dies,
-                        lives,
-                        progress: (total / (infos?.length ?? 0)) * 100
-                    }
-                })
-            } else {
-                dies++;
-                io.emit(instanceId, {
-                    lives,
-                    dies,
-                    progress: (total / (infos?.length ?? 0)) * 100,
-                    statusMessage: null,
-                    status: InstanceStatus.PROGRESS
-                })
-
-                await prisma.info.update({
-                    where: {
-                        id: info?.id
-                    },
-                    data: {
-                        status: InfoStatus.DIE
-                    }
-                })
-
-                await prisma.instance.update({
-                    where: {
-                        id: instanceId
-                    },
-                    data: {
-                        dies,
-                        lives,
-                        progress: (total / (infos?.length ?? 0)) * 100
-                    }
-                })
-            }
-        }
-
-        io.emit(instanceId, {
-            lives,
-            dies,
-            progress: (total / (infos?.length ?? 0)) * 100,
-            status: InstanceStatus.COMPLETED,
-            statusMessage: null
-        })
-
-        await prisma.instance.update({
-            where: {
-                id: instanceId
-            },
-            data: {
-                status: InstanceStatus.COMPLETED,
-                lives,
-                dies
-            }
-        })
+        await instanceConsumer.INIT(instanceId);
 
         return done(null, 'Success');
     } catch (e: any) {

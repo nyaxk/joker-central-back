@@ -46,7 +46,7 @@ const InstanceController = () => {
             const job = InstanceQueue.createJob({instance: instance.id})
             await job.save();
 
-            return res.send('Instância criada com sucesso !');
+            return res.send({instanceId: instance?.id});
         } catch (e: any) {
             return res.status(500).send(e?.message)
         }
