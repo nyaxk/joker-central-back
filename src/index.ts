@@ -39,7 +39,7 @@ router.get('/test', async (_, res) => {
         return Math.floor(Math.random() * (max - min + 1) + min)
     }
     await new Promise(r => setTimeout(r, randomIntFromInterval(1000, 10000)));
-    return res.send("#DIE")
+    return res.send("#EV")
 })
 
 
