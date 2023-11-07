@@ -32,7 +32,12 @@ routes.forEach((route) => {
 
 router.get('/test', async (_, res) => {
     await new Promise(r => setTimeout(r, 5000));
-    return res.send('#Live')
+    const textArray = [
+        '#Live',
+        '#Die'
+    ];
+    const randomNumber = Math.floor(Math.random()*textArray.length);
+    return res.send(textArray[randomNumber])
 })
 
 
