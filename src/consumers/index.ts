@@ -253,6 +253,17 @@ class InstanceConsumer {
                 info: updatedInfo
             })
 
+            await prisma.instance.update({
+                where: {
+                    id: instance?.id
+                },
+                data: {
+                    lives: this.lives,
+                    dies: this.dies,
+                    progress: (this.total / (infos?.length ?? 0)) * 100
+                }
+            })
+
             return 'Error';
         }
     }
