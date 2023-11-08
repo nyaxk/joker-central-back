@@ -227,6 +227,7 @@ class InstanceConsumer {
 
             return 'Ok';
         } catch (e: any) {
+            this.dies++;
             const instance = await prisma.instance.findUnique({
                 where: {
                     id: instanceData?.id
