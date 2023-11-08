@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express'
 import {routes} from './routes'
 import cors from 'cors';
-import Queue from 'bee-queue';
+import Queue, {DoneCallback, Job} from 'bee-queue';
 import {Server} from "socket.io";
 import * as process from "process";
 import {prisma} from "@/globals";
@@ -12,10 +12,6 @@ import {instanceConsumer} from "@/consumers";
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
 const app = express();
-
-export const CreditsQueue =  new Queue('consumer-credits', {
-    redis: {url: REDIS_URL},
-});
 
 export const InstanceQueue = new Queue('consumer-instance', {
     redis: {url: REDIS_URL},
@@ -80,7 +76,7 @@ io.on('connection', (socket) => {
     });
 });
 
-InstanceQueue.process(10000, async function (job: any, done: any) {
+InstanceQueue.process(10000, async function (job: Job<any>, done: DoneCallback<any>) {
     const instanceId = job.data.instance;
     try {
         console.log(`[Executando instância] - ${instanceId}`);
