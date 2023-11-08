@@ -139,8 +139,8 @@ class InstanceConsumer {
                 return 'Paused insufficient funds';
             }
 
-            this.total++;
             const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
+            this.total++;
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
                 this.lives++;
@@ -229,6 +229,7 @@ class InstanceConsumer {
         } catch (e: any) {
             console.log('Error: ', e?.response?.data ?? e?.message)
             this.dies++;
+            this.total++;
             const instance = await prisma.instance.findUnique({
                 where: {
                     id: instanceData?.id
