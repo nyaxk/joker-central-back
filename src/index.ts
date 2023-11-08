@@ -45,7 +45,7 @@ router.get('/test', async (_, res) => {
     //     return res.status(500).send(e?.message)
     // }
 
-    await new Promise(r => setTimeout(r, 5000));
+    // await new Promise(r => setTimeout(r, 5000));
     const textArray = [
         '#Live',
         '#Die'

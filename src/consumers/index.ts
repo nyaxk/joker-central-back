@@ -5,11 +5,13 @@ import {io} from "@/index";
 
 class InstanceConsumer {
     constructor() {
-        this.total = 0;
+        this.tested = 0;
         this.lives = 0;
         this.dies = 0;
+        this.total = 0;
     }
 
+    private tested: number;
     private total: number;
     private lives: number;
     private dies: number;
@@ -27,7 +29,8 @@ class InstanceConsumer {
 
         this.lives = counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0;
         this.dies = counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0;
-        this.total = (counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0) + (counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0);
+        this.tested = (counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0) + (counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0);
+        this.total = (counts?.find((count) => count.status === 'LIVE')?._count?.status ?? 0) + (counts?.find((count) => count.status === 'DIE')?._count?.status ?? 0) + (counts?.find((count) => count.status === 'TESTING')?._count?.status ?? 0);
 
         const instanceData = await prisma.instance.findUnique({
             where: {
@@ -46,6 +49,8 @@ class InstanceConsumer {
 
         const infos = instanceData?.infos;
 
+        let promises = [];
+
         await prisma.instance.update({
             where: {
                 id: instanceId
@@ -56,44 +61,46 @@ class InstanceConsumer {
         })
 
 
-        let promises = []
+        // let promises = []
         for await (const info of infos ?? []) {
-            promises.push(this.CHECK(info, instanceData, infos));
+            promises.push(this.CHECK(info, instanceData))
         }
 
-        const promiseResponse = await Promise.all(promises);
-
-        if (!promiseResponse?.some((inst: any) => inst?.includes('Paused insufficient funds'))) {
-            const instance = await prisma.instance.findUnique({
-                where: {
-                    id: instanceId
-                }
-            })
-
-            if (instance?.status !== InstanceStatus.PAUSED && instance?.status !== InstanceStatus.CANCELLED) {
-                io.emit(instanceId, {
-                    lives: this.lives,
-                    dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100,
-                    status: InstanceStatus.COMPLETED,
-                    statusMessage: null
-                })
-
-                await prisma.instance.update({
+        try {
+            const promiseResponse = await Promise.all(promises);
+            if (!promiseResponse?.some((inst: any) => inst?.includes('Paused insufficient funds'))) {
+                const instance = await prisma.instance.findUnique({
                     where: {
                         id: instanceId
-                    },
-                    data: {
-                        status: InstanceStatus.COMPLETED,
-                        lives: this.lives,
-                        dies: this.dies
                     }
                 })
+
+                if (instance?.status !== InstanceStatus.PAUSED && instance?.status !== InstanceStatus.CANCELLED) {
+                    io.emit(instanceId, {
+                        lives: this.lives,
+                        dies: this.dies,
+                        progress: (this.tested / (this.total)) * 100,
+                        status: InstanceStatus.COMPLETED,
+                        statusMessage: null
+                    })
+
+                    await prisma.instance.update({
+                        where: {
+                            id: instanceId
+                        },
+                        data: {
+                            status: InstanceStatus.COMPLETED,
+                            lives: this.lives,
+                            dies: this.dies
+                        }
+                    })
+                }
             }
-        }
+        } catch (_) {}
+
     }
 
-    private CHECK = async (info: Info, instanceData: any, infos: any) => {
+    private CHECK = async (info: Info, instanceData: any) => {
         try {
             const instance = await prisma.instance.findUnique({
                 where: {
@@ -131,16 +138,15 @@ class InstanceConsumer {
                 io.emit(instance?.id, {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    progress: (this.tested / (this.total)) * 100,
                     status: InstanceStatus.PAUSED,
                     statusMessage: 'Saldo insuficiente !'
                 })
 
-                return 'Paused insufficient funds';
+                throw new Error('Paused insufficient funds')
             }
 
             const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
-            this.total++;
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
                 const userDecrement = await prisma.user.update({
@@ -154,7 +160,7 @@ class InstanceConsumer {
                     }
                 })
 
-                if((userDecrement?.credits?.toNumber() ?? 0) < 0) {
+                if ((userDecrement?.credits?.toNumber() ?? 0) < 0) {
                     await prisma.instance.update({
                         where: {
                             id: instanceData?.id
@@ -168,7 +174,7 @@ class InstanceConsumer {
                     io.emit(instance?.id, {
                         lives: this.lives,
                         dies: this.dies,
-                        progress: (this.total / (infos?.length ?? 0)) * 100,
+                        progress: (this.tested / (this.total)) * 100,
                         status: InstanceStatus.PAUSED,
                         statusMessage: 'Saldo insuficiente !'
                     })
@@ -177,10 +183,11 @@ class InstanceConsumer {
                 }
 
                 this.lives++;
+                this.tested++;
                 io.emit(instance?.id, {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    progress: (this.tested / (this.total)) * 100,
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info
@@ -199,7 +206,7 @@ class InstanceConsumer {
                 io.emit(instance?.id, {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    progress: (this.tested / (this.total)) * 100,
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info: updatedInfo
@@ -212,11 +219,12 @@ class InstanceConsumer {
                     data: {
                         lives: this.lives,
                         dies: this.dies,
-                        progress: (this.total / (infos?.length ?? 0)) * 100
+                        progress: (this.tested / (this.total)) * 100
                     }
                 })
             } else {
                 this.dies++;
+                this.tested++;
                 const updatedInfo = await prisma.info.update({
                     where: {
                         id: info?.id
@@ -230,7 +238,7 @@ class InstanceConsumer {
                 io.emit(instance?.id, {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    progress: (this.tested / (this.total)) * 100,
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info: updatedInfo
@@ -243,7 +251,7 @@ class InstanceConsumer {
                     data: {
                         lives: this.lives,
                         dies: this.dies,
-                        progress: (this.total / (infos?.length ?? 0)) * 100
+                        progress: (this.tested / (this.total)) * 100
                     }
                 })
             }
@@ -251,8 +259,11 @@ class InstanceConsumer {
 
             return 'Ok';
         } catch (e: any) {
+            if (e?.message === 'Paused insufficient funds') {
+                throw new Error('Paused insufficient funds')
+            }
             this.dies++;
-            this.total++;
+            this.tested++;
             const instance = await prisma.instance.findUnique({
                 where: {
                     id: instanceData?.id
@@ -272,7 +283,7 @@ class InstanceConsumer {
             io.emit(instance?.id ?? '', {
                 lives: this.lives,
                 dies: this.dies,
-                progress: (this.total / (infos?.length ?? 0)) * 100,
+                progress: (this.tested / (this.total)) * 100,
                 statusMessage: null,
                 status: InstanceStatus.PROGRESS,
                 info: updatedInfo
@@ -285,7 +296,7 @@ class InstanceConsumer {
                 data: {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100
+                    progress: (this.tested / (this.total)) * 100
                 }
             })
 
