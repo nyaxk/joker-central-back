@@ -187,6 +187,12 @@ const UserController = () => {
         try {
             const {username, password, active, role} = req.body;
 
+            const user = req?.user;
+
+            if (user?.role === 'ADMIN' && role !== "USER") {
+                return res.status(401).send("Unauthorized")
+            }
+
             await prisma.user.create({
                 data: {
                     username,

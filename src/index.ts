@@ -13,6 +13,10 @@ const REDIS_URL = process.env.REDIS_URL ?? '';
 
 const app = express();
 
+export const CreditsQueue =  new Queue('consumer-credits', {
+    redis: {url: REDIS_URL},
+});
+
 export const InstanceQueue = new Queue('consumer-instance', {
     redis: {url: REDIS_URL},
 });

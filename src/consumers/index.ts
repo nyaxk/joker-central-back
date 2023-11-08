@@ -49,8 +49,6 @@ class InstanceConsumer {
 
         const infos = instanceData?.infos;
 
-        let promises = [];
-
         await prisma.instance.update({
             where: {
                 id: instanceId
@@ -60,8 +58,8 @@ class InstanceConsumer {
             }
         })
 
+        const promises = [];
 
-        // let promises = []
         for await (const info of infos ?? []) {
             promises.push(this.CHECK(info, instanceData))
         }
@@ -177,6 +175,15 @@ class InstanceConsumer {
                         progress: (this.tested / (this.total)) * 100,
                         status: InstanceStatus.PAUSED,
                         statusMessage: 'Saldo insuficiente !'
+                    })
+
+                    await prisma.user.update({
+                        where: {
+                            id: user?.id
+                        },
+                        data: {
+                            credits: 0
+                        }
                     })
 
                     return 'Paused insufficient funds';
