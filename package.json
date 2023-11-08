@@ -29,11 +29,13 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@faker-js/faker": "^8.2.0",
     "@prisma/client": "^5.5.2",
     "@types/bcrypt": "^5.0.0",
     "@types/cors": "^2.8.14",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/redis": "^4.0.11",
+    "@types/tough-cookie": "^4.0.5",
     "axios": "^1.5.0",
     "babel-plugin-tsconfig-paths-module-resolver": "^1.0.4",
     "bcrypt": "^5.1.1",

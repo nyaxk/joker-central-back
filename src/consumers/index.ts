@@ -94,115 +94,156 @@ class InstanceConsumer {
     }
 
     private CHECK = async (info: Info, instanceData: any, infos: any) => {
-        const instance = await prisma.instance.findUnique({
-            where: {
-                id: instanceData?.id
-            }
-        })
-
-        if (!instance) {
-            return 'Instance not found !';
-        }
-
-        if (instance?.status === InstanceStatus.PAUSED || instance?.status === InstanceStatus.CANCELLED) {
-            return instance?.status
-        }
-
-        const user = await prisma.user.findUnique({
-            where: {
-                id: instanceData?.user?.id
-            }
-        })
-
-        const credits = (user?.credits?.toNumber() ?? 0) - 1;
-
-        if (credits < 0) {
-            await prisma.instance.update({
+        try {
+            const instance = await prisma.instance.findUnique({
                 where: {
                     id: instanceData?.id
-                },
-                data: {
-                    status: InstanceStatus.PAUSED,
-                    statusMessage: 'Saldo insuficiente !'
                 }
             })
 
-            io.emit(instance?.id, {
-                lives: this.lives,
-                dies: this.dies,
-                progress: (this.total / (infos?.length ?? 0)) * 100,
-                status: InstanceStatus.PAUSED,
-                statusMessage: 'Saldo insuficiente !'
-            })
+            if (!instance) {
+                return 'Instance not found !';
+            }
 
-            return 'Paused insufficient funds';
-        }
+            if (instance?.status === InstanceStatus.PAUSED || instance?.status === InstanceStatus.CANCELLED) {
+                return instance?.status
+            }
 
-        const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
-        this.total++;
-     
-        if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
-            this.lives++;
-            io.emit(instance?.id, {
-                lives: this.lives,
-                dies: this.dies,
-                progress: (this.total / (infos?.length ?? 0)) * 100,
-                statusMessage: null,
-                status: InstanceStatus.PROGRESS,
-                info
-            })
-
-            const updatedInfo = await prisma.info.update({
+            const user = await prisma.user.findUnique({
                 where: {
-                    id: info?.id
-                },
-                data: {
-                    status: InfoStatus.LIVE,
-                    response: data?.toString()
+                    id: instanceData?.user?.id
                 }
             })
 
-            io.emit(instance?.id, {
-                lives: this.lives,
-                dies: this.dies,
-                progress: (this.total / (infos?.length ?? 0)) * 100,
-                statusMessage: null,
-                status: InstanceStatus.PROGRESS,
-                info: updatedInfo
-            })
+            const credits = (user?.credits?.toNumber() ?? 0) - 1;
 
-            await prisma.user.update({
-                where: {
-                    id: user?.id
-                },
-                data: {
-                    credits
-                }
-            })
+            if (credits < 0) {
+                await prisma.instance.update({
+                    where: {
+                        id: instanceData?.id
+                    },
+                    data: {
+                        status: InstanceStatus.PAUSED,
+                        statusMessage: 'Saldo insuficiente !'
+                    }
+                })
 
-            await prisma.instance.update({
-                where: {
-                    id: instance?.id
-                },
-                data: {
+                io.emit(instance?.id, {
                     lives: this.lives,
                     dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100
+                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    status: InstanceStatus.PAUSED,
+                    statusMessage: 'Saldo insuficiente !'
+                })
+
+                return 'Paused insufficient funds';
+            }
+
+            this.total++;
+            const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
+
+            if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
+                this.lives++;
+                io.emit(instance?.id, {
+                    lives: this.lives,
+                    dies: this.dies,
+                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    statusMessage: null,
+                    status: InstanceStatus.PROGRESS,
+                    info
+                })
+
+                const updatedInfo = await prisma.info.update({
+                    where: {
+                        id: info?.id
+                    },
+                    data: {
+                        status: InfoStatus.LIVE,
+                        response: data?.toString()
+                    }
+                })
+
+                io.emit(instance?.id, {
+                    lives: this.lives,
+                    dies: this.dies,
+                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    statusMessage: null,
+                    status: InstanceStatus.PROGRESS,
+                    info: updatedInfo
+                })
+
+                await prisma.user.update({
+                    where: {
+                        id: user?.id
+                    },
+                    data: {
+                        credits
+                    }
+                })
+
+                await prisma.instance.update({
+                    where: {
+                        id: instance?.id
+                    },
+                    data: {
+                        lives: this.lives,
+                        dies: this.dies,
+                        progress: (this.total / (infos?.length ?? 0)) * 100
+                    }
+                })
+            } else {
+                this.dies++;
+                const updatedInfo = await prisma.info.update({
+                    where: {
+                        id: info?.id
+                    },
+                    data: {
+                        status: InfoStatus.DIE,
+                        response: data?.toString()
+                    }
+                })
+
+                io.emit(instance?.id, {
+                    lives: this.lives,
+                    dies: this.dies,
+                    progress: (this.total / (infos?.length ?? 0)) * 100,
+                    statusMessage: null,
+                    status: InstanceStatus.PROGRESS,
+                    info: updatedInfo
+                })
+
+                await prisma.instance.update({
+                    where: {
+                        id: instance?.id
+                    },
+                    data: {
+                        lives: this.lives,
+                        dies: this.dies,
+                        progress: (this.total / (infos?.length ?? 0)) * 100
+                    }
+                })
+            }
+
+
+            return 'Ok';
+        } catch (e: any) {
+            const instance = await prisma.instance.findUnique({
+                where: {
+                    id: instanceData?.id
                 }
             })
-        } else {
-            this.dies++;
+
             const updatedInfo = await prisma.info.update({
                 where: {
                     id: info?.id
                 },
                 data: {
                     status: InfoStatus.DIE,
-                    response: data?.toString()
+                    response: 'Houve um erro'
                 }
             })
 
-            io.emit(instance?.id, {
+            io.emit(instance?.id ?? '', {
                 lives: this.lives,
                 dies: this.dies,
                 progress: (this.total / (infos?.length ?? 0)) * 100,
@@ -211,19 +252,8 @@ class InstanceConsumer {
                 info: updatedInfo
             })
 
-            await prisma.instance.update({
-                where: {
-                    id: instance?.id
-                },
-                data: {
-                    lives: this.lives,
-                    dies: this.dies,
-                    progress: (this.total / (infos?.length ?? 0)) * 100
-                }
-            })
+            return 'Error';
         }
-
-        return 'Ok';
     }
 }
 
