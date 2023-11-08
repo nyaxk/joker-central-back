@@ -1,9 +1,9 @@
 import {CookieJar} from 'tough-cookie';
 import axios from "axios";
 import {fakerPT_BR as faker} from "@faker-js/faker";
-import {fakerBr} from '@js-brasil/fakerbr'
 import { createCookieAgent } from 'http-cookie-agent/http';
 import httpsProxyAgent from 'https-proxy-agent';
+import { generate as generateCpf } from 'gerador-validador-cpf'
 
 const getStr = (str: any, start: any, end: any) => {
     return str?.split(start)[1]?.split(end)[0];
@@ -125,7 +125,7 @@ export const Paramount = async (info: string) => {
             'city': faker.location.city(),
             'state': 'SC',
             'postal_code': '89249000',
-            'tax_identifier': fakerBr?.cpf?.(),
+            'tax_identifier': generateCpf({format: true}),
             'tax_identifier_type': 'cpf',
             'country': 'BR',
             'token': '',
