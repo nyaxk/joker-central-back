@@ -31,12 +31,26 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
+    // const response = await Paramount('5346960523033881|08|2026|000');
+    // return res.send(response)
+    // try {
+    //     const {lista} = req.query;
+    //     const {data} = await axios.get(`http://ec2-52-67-2-206.sa-east-1.compute.amazonaws.com/api/api.php?lista=${lista}`)
+    //
+    //     console.log('DATA:', data)
+    //
+    //     return res.send(data)
+    // } catch (e: any) {
+    //     console.log(e?.message)
+    //     return res.status(500).send(e?.message)
+    // }
+
     await new Promise(r => setTimeout(r, 5000));
     const textArray = [
         '#Live',
         '#Die'
     ];
-    const randomNumber = Math.floor(Math.random()*textArray.length);
+    const randomNumber = Math.floor(Math.random() * textArray.length);
     return res.send(textArray[randomNumber])
 })
 
