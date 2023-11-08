@@ -227,7 +227,6 @@ class InstanceConsumer {
 
             return 'Ok';
         } catch (e: any) {
-            console.log('Error: ', e?.response?.data ?? e?.message)
             this.dies++;
             this.total++;
             const instance = await prisma.instance.findUnique({
