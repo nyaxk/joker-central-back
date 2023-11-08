@@ -143,6 +143,39 @@ class InstanceConsumer {
             this.total++;
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
+                const userDecrement = await prisma.user.update({
+                    where: {
+                        id: user?.id
+                    },
+                    data: {
+                        credits: {
+                            decrement: 1
+                        }
+                    }
+                })
+
+                if((userDecrement?.credits?.toNumber() ?? 0) < 0) {
+                    await prisma.instance.update({
+                        where: {
+                            id: instanceData?.id
+                        },
+                        data: {
+                            status: InstanceStatus.PAUSED,
+                            statusMessage: 'Saldo insuficiente !'
+                        }
+                    })
+
+                    io.emit(instance?.id, {
+                        lives: this.lives,
+                        dies: this.dies,
+                        progress: (this.total / (infos?.length ?? 0)) * 100,
+                        status: InstanceStatus.PAUSED,
+                        statusMessage: 'Saldo insuficiente !'
+                    })
+
+                    return 'Paused insufficient funds';
+                }
+
                 this.lives++;
                 io.emit(instance?.id, {
                     lives: this.lives,
@@ -170,17 +203,6 @@ class InstanceConsumer {
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info: updatedInfo
-                })
-
-                await prisma.user.update({
-                    where: {
-                        id: user?.id
-                    },
-                    data: {
-                        credits: {
-                            decrement: 1
-                        }
-                    }
                 })
 
                 await prisma.instance.update({

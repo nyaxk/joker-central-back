@@ -1,9 +1,9 @@
 import {CookieJar} from 'tough-cookie';
 import axios from "axios";
 import {fakerPT_BR as faker} from "@faker-js/faker";
-import { createCookieAgent } from 'http-cookie-agent/http';
+import {createCookieAgent} from 'http-cookie-agent/http';
 import httpsProxyAgent from 'https-proxy-agent';
-import { generate as generateCpf } from 'gerador-validador-cpf'
+import {generate as generateCpf} from 'gerador-validador-cpf'
 
 const getStr = (str: any, start: any, end: any) => {
     return str?.split(start)[1]?.split(end)[0];
@@ -39,7 +39,12 @@ export const Paramount = async (info: string) => {
         const HttpsProxyCookieAgent = createCookieAgent(httpsProxyAgent.HttpsProxyAgent);
 
         const client = axios.create({
-            httpsAgent: new HttpsProxyCookieAgent({ cookies: {jar}, hostname: '185.21.60.181', port: '14658', auth: '6419636-res-country-BR:2jjead685e' }),
+            httpsAgent: new HttpsProxyCookieAgent({
+                cookies: {jar},
+                hostname: '185.21.60.181',
+                port: '14658',
+                auth: '6419636-res-country-BR:2jjead685e'
+            }),
         });
 
         const bin = await GetBIN(info);
