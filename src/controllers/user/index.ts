@@ -124,9 +124,12 @@ const UserController = () => {
         }
     }
 
-    const get = async (_: IAuthRequest, res: Response) => {
+    const get = async (req: IAuthRequest, res: Response) => {
         try {
-            const users = await prisma.user.findMany({
+            const {page} = req.query;
+            const currentPage = parseInt(page?.toString() ?? '1') ?? 1;
+
+            const users = await prisma.user.paginate({
                 select: {
                     id: true,
                     username: true,
@@ -139,8 +142,16 @@ const UserController = () => {
                 orderBy: {
                     username: "asc"
                 }
+            }).withPages({
+                limit: 10,
+                page: currentPage,
+                includePageCount: true,
             });
-            return res.send({users})
+
+            return res.send({
+                data: users[0],
+                pagination: users[1]
+            })
         } catch (e: any) {
             return res.status(500).send(e?.message)
         }

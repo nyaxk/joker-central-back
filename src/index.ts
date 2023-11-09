@@ -7,7 +7,7 @@ import {Server} from "socket.io";
 import * as process from "process";
 import {prisma} from "@/globals";
 import {InstanceStatus} from "@prisma/client";
-import {instanceConsumer} from "@/consumers";
+import InstanceConsumer from "@/consumers";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
@@ -45,7 +45,11 @@ router.get('/test', async (_, res) => {
     //     return res.status(500).send(e?.message)
     // }
 
-    // await new Promise(r => setTimeout(r, 5000));
+    function randomIntFromInterval(min: any, max: any) { // min and max included
+        return Math.floor(Math.random() * (max - min + 1) + min)
+    }
+
+    await new Promise(r => setTimeout(r, randomIntFromInterval(10000, 50000)));
     const textArray = [
         '#Live',
         '#Die'
@@ -69,11 +73,11 @@ export const io = new Server(server, {
     }
 });
 
-io.on('connection', (socket) => {
-    console.log(`[+] User connected: ${socket.id}`);
-    socket.on('disconnect', () => {
-        console.log(`[-] User disconnected: ${socket.id}`);
-    });
+io.on('connection', (_) => {
+    // console.log(`[+] User connected: ${socket.id}`);
+    // socket.on('disconnect', () => {
+    //     console.log(`[-] User disconnected: ${socket.id}`);
+    // });
 });
 
 InstanceQueue.process(10000, async function (job: Job<any>, done: DoneCallback<any>) {
@@ -81,7 +85,8 @@ InstanceQueue.process(10000, async function (job: Job<any>, done: DoneCallback<a
     try {
         console.log(`[Executando instância] - ${instanceId}`);
 
-        await instanceConsumer.INIT(instanceId);
+        const consumer = new InstanceConsumer();
+        await consumer.INIT(instanceId);
 
         return done(null, 'Success');
     } catch (e: any) {

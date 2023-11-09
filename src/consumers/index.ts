@@ -75,6 +75,7 @@ class InstanceConsumer {
 
                 if (instance?.status !== InstanceStatus.PAUSED && instance?.status !== InstanceStatus.CANCELLED) {
                     io.emit(instanceId, {
+                        id: instanceId,
                         lives: this.lives,
                         dies: this.dies,
                         progress: (this.tested / (this.total)) * 100,
@@ -134,6 +135,7 @@ class InstanceConsumer {
                 })
 
                 io.emit(instance?.id, {
+                    id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
                     progress: (this.tested / (this.total)) * 100,
@@ -170,6 +172,7 @@ class InstanceConsumer {
                     })
 
                     io.emit(instance?.id, {
+                        id: instance?.id,
                         lives: this.lives,
                         dies: this.dies,
                         progress: (this.tested / (this.total)) * 100,
@@ -192,6 +195,7 @@ class InstanceConsumer {
                 this.lives++;
                 this.tested++;
                 io.emit(instance?.id, {
+                    id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
                     progress: (this.tested / (this.total)) * 100,
@@ -211,6 +215,7 @@ class InstanceConsumer {
                 })
 
                 io.emit(instance?.id, {
+                    id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
                     progress: (this.tested / (this.total)) * 100,
@@ -243,6 +248,7 @@ class InstanceConsumer {
                 })
 
                 io.emit(instance?.id, {
+                    id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
                     progress: (this.tested / (this.total)) * 100,
@@ -288,6 +294,7 @@ class InstanceConsumer {
             })
 
             io.emit(instance?.id ?? '', {
+                id: instance?.id,
                 lives: this.lives,
                 dies: this.dies,
                 progress: (this.tested / (this.total)) * 100,
@@ -312,4 +319,4 @@ class InstanceConsumer {
     }
 }
 
-export const instanceConsumer = new InstanceConsumer();
+export default InstanceConsumer;
