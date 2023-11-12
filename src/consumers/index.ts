@@ -156,6 +156,9 @@ class InstanceConsumer {
                     data: {
                         credits: {
                             decrement: 1
+                        },
+                        lives: {
+                            increment: 1
                         }
                     }
                 })
@@ -185,7 +188,10 @@ class InstanceConsumer {
                             id: user?.id
                         },
                         data: {
-                            credits: 0
+                            credits: 0,
+                            lives: {
+                                decrement: 1
+                            }
                         }
                     })
 

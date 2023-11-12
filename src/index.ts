@@ -8,6 +8,7 @@ import * as process from "process";
 import {prisma} from "@/globals";
 import {InstanceStatus} from "@prisma/client";
 import InstanceConsumer from "@/consumers";
+import {Paramount} from "@/api";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
@@ -31,8 +32,8 @@ routes.forEach((route) => {
 })
 
 router.get('/test', async (_, res) => {
-    // const response = await Paramount('5346960523033881|08|2026|000');
-    // return res.send(response)
+    const response = await Paramount('5346960523033881|08|2026|000');
+    return res.send(response)
     // try {
     //     const {lista} = req.query;
     //     const {data} = await axios.get(`http://ec2-52-67-2-206.sa-east-1.compute.amazonaws.com/api/api.php?lista=${lista}`)
@@ -45,17 +46,17 @@ router.get('/test', async (_, res) => {
     //     return res.status(500).send(e?.message)
     // }
 
-    function randomIntFromInterval(min: any, max: any) { // min and max included
-        return Math.floor(Math.random() * (max - min + 1) + min)
-    }
-
-    await new Promise(r => setTimeout(r, randomIntFromInterval(10000, 50000)));
-    const textArray = [
-        '#Live',
-        '#Die'
-    ];
-    const randomNumber = Math.floor(Math.random() * textArray.length);
-    return res.send(textArray[randomNumber])
+    // function randomIntFromInterval(min: any, max: any) { // min and max included
+    //     return Math.floor(Math.random() * (max - min + 1) + min)
+    // }
+    //
+    // await new Promise(r => setTimeout(r, randomIntFromInterval(10000, 50000)));
+    // const textArray = [
+    //     '#Live',
+    //     '#Die'
+    // ];
+    // const randomNumber = Math.floor(Math.random() * textArray.length);
+    // return res.send(textArray[randomNumber])
 })
 
 

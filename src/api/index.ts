@@ -1,7 +1,7 @@
 import {CookieJar} from 'tough-cookie';
 import axios from "axios";
 import {fakerPT_BR as faker} from "@faker-js/faker";
-import {createCookieAgent} from 'http-cookie-agent/http';
+import {createCookieAgent, HttpsCookieAgent} from 'http-cookie-agent/http';
 import httpsProxyAgent from 'https-proxy-agent';
 import {generate as generateCpf} from 'gerador-validador-cpf'
 
@@ -36,14 +36,15 @@ export const Paramount = async (info: string) => {
 
         const jar = new CookieJar();
 
+        // @ts-ignore
         const HttpsProxyCookieAgent = createCookieAgent(httpsProxyAgent.HttpsProxyAgent);
 
         const client = axios.create({
-            httpsAgent: new HttpsProxyCookieAgent({
+            httpsAgent: new HttpsCookieAgent({
                 cookies: {jar},
-                hostname: '185.21.60.181',
-                port: '14658',
-                auth: '6419636-res-country-BR:2jjead685e'
+                // hostname: '24.199.75.16',
+                // port: '31112',
+                // auth: 'urnegovw:lB9XtYTRC17Y766t_country-Brazil'
             }),
         });
 
