@@ -200,6 +200,7 @@ class InstanceConsumer {
 
                 this.lives++;
                 this.tested++;
+
                 io.emit(instance?.id, {
                     id: instance?.id,
                     lives: this.lives,
