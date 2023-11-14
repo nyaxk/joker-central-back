@@ -113,7 +113,7 @@ UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) 
                 id: job.data.userId
             }
         }).then((user) => {
-            if (((user?.credits?.toNumber() ?? 0) - 1) <= 0) {
+            if (((user?.credits ?? 0) - 1) <= 0) {
                 return done(null, false);
             }
 
@@ -138,7 +138,7 @@ UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) 
                 id: job.data.userId
             }
         }).then((user) => {
-            if (((user?.credits?.toNumber() ?? 0) - 1) <= 0) {
+            if (((user?.credits ?? 0) - 1) <= 0) {
                 return done(null, false);
             }
 
