@@ -1,7 +1,37 @@
 import {prisma} from "@/globals";
 import {Info, InfoStatus, InstanceStatus} from "@prisma/client";
 import axios from "axios";
-import {io} from "@/index";
+import {UserQueue, EmitSocket} from "@/index";
+
+const canDecrementBalance = async (userId: string) => {
+    const job = UserQueue.createJob({userId, type: 'canDecrementBalance'});
+    await job.save();
+    return await new Promise((resolve) => {
+        job.on('succeeded', (result) => {
+            return resolve(result)
+        });
+    })
+}
+
+const decrementBalance = async (userId: string) => {
+    const job = UserQueue.createJob({userId, type: 'decrementBalance'});
+    await job.save();
+    return await new Promise((resolve) => {
+        job.on('succeeded', (result) => {
+            return resolve(result)
+        });
+    })
+}
+
+const emitSocket = async (to: string, body: any) => {
+    const job = EmitSocket.createJob({to, body});
+    await job.save();
+    return await new Promise((resolve) => {
+        job.on('succeeded', (result) => {
+            return resolve(result)
+        });
+    })
+}
 
 class InstanceConsumer {
     constructor() {
@@ -74,7 +104,7 @@ class InstanceConsumer {
                 })
 
                 if (instance?.status !== InstanceStatus.PAUSED && instance?.status !== InstanceStatus.CANCELLED) {
-                    io.emit(instanceId, {
+                    await emitSocket(instanceId, {
                         id: instanceId,
                         lives: this.lives,
                         dies: this.dies,
@@ -95,17 +125,25 @@ class InstanceConsumer {
                     })
                 }
             }
-        } catch (_) {}
+        } catch (_) {
+        }
 
     }
 
     private CHECK = async (info: Info, instanceData: any) => {
         try {
-            const instance = await prisma.instance.findUnique({
-                where: {
-                    id: instanceData?.id
-                }
-            })
+            const [instance, user] = await prisma.$transaction([
+                prisma.instance.findUnique({
+                    where: {
+                        id: instanceData?.id
+                    }
+                }),
+                prisma.user.findUnique({
+                    where: {
+                        id: instanceData?.user?.id
+                    }
+                })
+            ])
 
             if (!instance) {
                 return 'Instance not found !';
@@ -115,15 +153,9 @@ class InstanceConsumer {
                 return instance?.status
             }
 
-            const user = await prisma.user.findUnique({
-                where: {
-                    id: instanceData?.user?.id
-                }
-            })
+            const canDecrement = await canDecrementBalance(user?.id ?? '');
 
-            const credits = (user?.credits?.toNumber() ?? 0) - 1;
-
-            if (credits < 0) {
+            if (!canDecrement) {
                 await prisma.instance.update({
                     where: {
                         id: instanceData?.id
@@ -134,7 +166,7 @@ class InstanceConsumer {
                     }
                 })
 
-                io.emit(instance?.id, {
+                await emitSocket(instance?.id, {
                     id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
@@ -149,32 +181,22 @@ class InstanceConsumer {
             const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
-                const userDecrement = await prisma.user.update({
-                    where: {
-                        id: user?.id
-                    },
-                    data: {
-                        credits: {
-                            decrement: 1
-                        },
-                        lives: {
-                            increment: 1
-                        }
-                    }
-                })
+                const decrementCredits = await decrementBalance(user?.id ?? '');
 
-                if ((userDecrement?.credits?.toNumber() ?? 0) < 0) {
-                    await prisma.instance.update({
-                        where: {
-                            id: instanceData?.id
-                        },
-                        data: {
-                            status: InstanceStatus.PAUSED,
-                            statusMessage: 'Saldo insuficiente !'
-                        }
-                    })
+                if (!decrementCredits) {
+                    await prisma.$transaction([
+                        prisma.instance.update({
+                            where: {
+                                id: instanceData?.id
+                            },
+                            data: {
+                                status: InstanceStatus.PAUSED,
+                                statusMessage: 'Saldo insuficiente !'
+                            }
+                        }),
+                    ])
 
-                    io.emit(instance?.id, {
+                    await emitSocket(instance?.id, {
                         id: instance?.id,
                         lives: this.lives,
                         dies: this.dies,
@@ -183,45 +205,45 @@ class InstanceConsumer {
                         statusMessage: 'Saldo insuficiente !'
                     })
 
-                    await prisma.user.update({
-                        where: {
-                            id: user?.id
-                        },
-                        data: {
-                            credits: 0,
-                            lives: {
-                                decrement: 1
-                            }
-                        }
-                    })
-
                     return 'Paused insufficient funds';
                 }
 
                 this.lives++;
                 this.tested++;
 
-                io.emit(instance?.id, {
-                    id: instance?.id,
-                    lives: this.lives,
-                    dies: this.dies,
-                    progress: (this.tested / (this.total)) * 100,
-                    statusMessage: null,
-                    status: InstanceStatus.PROGRESS,
-                    info
-                })
+                const [updatedInfo] = await prisma.$transaction([
+                    prisma.info.update({
+                        where: {
+                            id: info?.id
+                        },
+                        data: {
+                            status: InfoStatus.LIVE,
+                            response: data?.toString()
+                        }
+                    }),
+                    prisma.instance.update({
+                        where: {
+                            id: instance?.id
+                        },
+                        data: {
+                            lives: this.lives,
+                            dies: this.dies,
+                            progress: (this.tested / (this.total)) * 100
+                        }
+                    }),
+                    prisma.user.update({
+                        where: {
+                            id: user?.id
+                        },
+                        data: {
+                            lives: {
+                                increment: 1
+                            }
+                        }
+                    })
+                ])
 
-                const updatedInfo = await prisma.info.update({
-                    where: {
-                        id: info?.id
-                    },
-                    data: {
-                        status: InfoStatus.LIVE,
-                        response: data?.toString()
-                    }
-                })
-
-                io.emit(instance?.id, {
+                await emitSocket(instance?.id, {
                     id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
@@ -229,32 +251,34 @@ class InstanceConsumer {
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info: updatedInfo
-                })
-
-                await prisma.instance.update({
-                    where: {
-                        id: instance?.id
-                    },
-                    data: {
-                        lives: this.lives,
-                        dies: this.dies,
-                        progress: (this.tested / (this.total)) * 100
-                    }
                 })
             } else {
                 this.dies++;
                 this.tested++;
-                const updatedInfo = await prisma.info.update({
-                    where: {
-                        id: info?.id
-                    },
-                    data: {
-                        status: InfoStatus.DIE,
-                        response: data?.toString()
-                    }
-                })
 
-                io.emit(instance?.id, {
+                const [updatedInfo] = await prisma.$transaction([
+                    prisma.info.update({
+                        where: {
+                            id: info?.id
+                        },
+                        data: {
+                            status: InfoStatus.DIE,
+                            response: data?.toString()
+                        }
+                    }),
+                    prisma.instance.update({
+                        where: {
+                            id: instance?.id
+                        },
+                        data: {
+                            lives: this.lives,
+                            dies: this.dies,
+                            progress: (this.tested / (this.total)) * 100
+                        }
+                    })
+                ])
+
+                await emitSocket(instance?.id, {
                     id: instance?.id,
                     lives: this.lives,
                     dies: this.dies,
@@ -262,17 +286,6 @@ class InstanceConsumer {
                     statusMessage: null,
                     status: InstanceStatus.PROGRESS,
                     info: updatedInfo
-                })
-
-                await prisma.instance.update({
-                    where: {
-                        id: instance?.id
-                    },
-                    data: {
-                        lives: this.lives,
-                        dies: this.dies,
-                        progress: (this.tested / (this.total)) * 100
-                    }
                 })
             }
 
@@ -284,31 +297,23 @@ class InstanceConsumer {
             }
             this.dies++;
             this.tested++;
-            const instance = await prisma.instance.findUnique({
-                where: {
-                    id: instanceData?.id
-                }
-            })
 
-            const updatedInfo = await prisma.info.update({
-                where: {
-                    id: info?.id
-                },
-                data: {
-                    status: InfoStatus.DIE,
-                    response: 'Houve um erro'
-                }
-            })
-
-            io.emit(instance?.id ?? '', {
-                id: instance?.id,
-                lives: this.lives,
-                dies: this.dies,
-                progress: (this.tested / (this.total)) * 100,
-                statusMessage: null,
-                status: InstanceStatus.PROGRESS,
-                info: updatedInfo
-            })
+            const [instance, updatedInfo] = await prisma.$transaction([
+                prisma.instance.findUnique({
+                    where: {
+                        id: instanceData?.id
+                    }
+                }),
+                prisma.info.update({
+                    where: {
+                        id: info?.id
+                    },
+                    data: {
+                        status: InfoStatus.DIE,
+                        response: 'Houve um erro'
+                    }
+                }),
+            ])
 
             await prisma.instance.update({
                 where: {
@@ -319,6 +324,16 @@ class InstanceConsumer {
                     dies: this.dies,
                     progress: (this.tested / (this.total)) * 100
                 }
+            })
+
+            await emitSocket(instance?.id ?? '', {
+                id: instance?.id,
+                lives: this.lives,
+                dies: this.dies,
+                progress: (this.tested / (this.total)) * 100,
+                statusMessage: null,
+                status: InstanceStatus.PROGRESS,
+                info: updatedInfo
             })
 
             return 'Error';

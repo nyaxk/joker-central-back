@@ -17,6 +17,14 @@ export const InstanceQueue = new Queue('consumer-instance', {
     redis: {url: REDIS_URL},
 });
 
+export const UserQueue = new Queue('consumer-balance', {
+    redis: {url: REDIS_URL},
+});
+
+export const EmitSocket = new Queue('consumer-socket', {
+    redis: {url: REDIS_URL},
+});
+
 const PORT: number = parseInt(process.env.PORT ?? '') || 4000;
 
 app.use(express.json())
@@ -63,7 +71,7 @@ app.use('/api', router)
 app.get('*', (_, res) => res.status(401).send('Unauthorized'))
 
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
     console.log("[+] Servidor iniciado na porta:", PORT)
 })
 
@@ -78,6 +86,65 @@ io.on('connection', (_) => {
     // socket.on('disconnect', () => {
     //     console.log(`[-] User disconnected: ${socket.id}`);
     // });
+});
+
+type EmitSocketQueueJOB = {
+    to: string;
+    body: any;
+}
+
+EmitSocket.process(function (job: Job<EmitSocketQueueJOB>, done: DoneCallback<any>) {
+    io.emit(job.data.to, job.data.body)
+
+    return done(null, true);
+})
+
+type BalanceQueueJOBType = 'canDecrementBalance' | 'decrementBalance';
+
+type BalanceQueueJOB = {
+    userId: string;
+    type: BalanceQueueJOBType;
+}
+
+UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) {
+    if (job.data.type === 'decrementBalance') {
+        prisma.user.findUnique({
+            where: {
+                id: job.data.userId
+            }
+        }).then((user) => {
+            if (((user?.credits?.toNumber() ?? 0) - 1) <= 0) {
+                return done(null, false);
+            }
+
+            prisma.user.update({
+                where: {
+                    id: job.data.userId
+                },
+                data: {
+                    credits: {
+                        decrement: 1
+                    }
+                }
+            }).then(() => {
+                return done(null, true);
+            })
+        })
+    }
+
+    if (job.data.type === 'canDecrementBalance') {
+        prisma.user.findUnique({
+            where: {
+                id: job.data.userId
+            }
+        }).then((user) => {
+            if (((user?.credits?.toNumber() ?? 0) - 1) <= 0) {
+                return done(null, false);
+            }
+
+            return done(null, true);
+        })
+    }
 });
 
 InstanceQueue.process(10000, async function (job: Job<any>, done: DoneCallback<any>) {
