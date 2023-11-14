@@ -23,6 +23,16 @@ const decrementBalance = async (userId: string) => {
     })
 }
 
+const incrementLives = async (userId: string) => {
+    const job = UserQueue.createJob({userId, type: 'incrementLives'});
+    await job.save();
+    return await new Promise((resolve) => {
+        job.on('succeeded', (result) => {
+            return resolve(result)
+        });
+    })
+}
+
 const emitSocket = async (to: string, body: any) => {
     const job = EmitSocket.createJob({to, body});
     await job.save();
@@ -211,6 +221,8 @@ class InstanceConsumer {
                 this.lives++;
                 this.tested++;
 
+                await incrementLives(user?.id ?? '')
+
                 const [updatedInfo] = await prisma.$transaction([
                     prisma.info.update({
                         where: {
@@ -231,16 +243,6 @@ class InstanceConsumer {
                             progress: (this.tested / (this.total)) * 100
                         }
                     }),
-                    prisma.user.update({
-                        where: {
-                            id: user?.id
-                        },
-                        data: {
-                            lives: {
-                                increment: 1
-                            }
-                        }
-                    })
                 ])
 
                 await emitSocket(instance?.id, {

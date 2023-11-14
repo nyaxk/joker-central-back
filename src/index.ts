@@ -99,7 +99,7 @@ EmitSocket.process(function (job: Job<EmitSocketQueueJOB>, done: DoneCallback<an
     return done(null, true);
 })
 
-type BalanceQueueJOBType = 'canDecrementBalance' | 'decrementBalance';
+type BalanceQueueJOBType = 'canDecrementBalance' | 'decrementBalance' | 'incrementLives';
 
 type BalanceQueueJOB = {
     userId: string;
@@ -142,6 +142,21 @@ UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) 
                 return done(null, false);
             }
 
+            return done(null, true);
+        })
+    }
+
+    if (job.data.type === 'incrementLives'){
+        prisma.user.update({
+            where: {
+                id: job.data.userId
+            },
+            data: {
+                lives: {
+                    increment: 1
+                }
+            }
+        }).then(() => {
             return done(null, true);
         })
     }
