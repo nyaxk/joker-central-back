@@ -13,7 +13,7 @@ const RankingController = () => {
                     username: true
                 },
                 orderBy: {
-                    lives: 'asc'
+                    lives: 'desc'
                 },
                 take: 3
             })
