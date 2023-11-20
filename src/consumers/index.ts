@@ -312,7 +312,7 @@ class InstanceConsumer {
                     },
                     data: {
                         status: InfoStatus.DIE,
-                        response: e?.response?.data ?? e?.message
+                        response: `${e?.response?.status} - ${e?.response?.data ?? e?.message}`
                     }
                 }),
             ])
