@@ -312,7 +312,7 @@ class InstanceConsumer {
                     },
                     data: {
                         status: InfoStatus.DIE,
-                        response: 'Houve um erro'
+                        response: e?.response?.data ?? e?.message
                     }
                 }),
             ])
