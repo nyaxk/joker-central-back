@@ -9,6 +9,7 @@ import {prisma} from "@/globals";
 import {InstanceStatus} from "@prisma/client";
 import InstanceConsumer from "@/consumers";
 import {Paramount} from "@/api";
+import JWT from "jsonwebtoken";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
@@ -82,7 +83,43 @@ export const io = new Server(server, {
     }
 });
 
-io.on('connection', (_) => {
+io.use(async (socket, next) => {
+    try {
+        const {token} = socket.handshake.auth;
+        if (!token) {
+            socket.disconnect()
+            return next(new Error("Unauthorized"));
+        }
+
+        const SECRET: string = process.env.SECRET || 'SECRET';
+        const verify: JWT.JwtPayload = await JWT.verify(token, SECRET) as JWT.JwtPayload
+
+        const user = await prisma.user.findFirst({
+            where: {
+                id: verify?.iss,
+                token: token
+            }
+        })
+
+        if (!user) {
+            socket.disconnect()
+            return next(new Error("Unauthorized"));
+        }
+
+        if (!user?.active) {
+            socket.disconnect()
+            return next(new Error("Unauthorized"));
+        }
+
+        socket.handshake.auth.user = user;
+
+        return next();
+    } catch (e: any) {
+        return next(new Error(e?.message));
+    }
+});
+
+io.on('connection', () => {
     // console.log(`[+] User connected: ${socket.id}`);
     // socket.on('disconnect', () => {
     //     console.log(`[-] User disconnected: ${socket.id}`);
@@ -127,7 +164,8 @@ UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) 
                         decrement: 1
                     }
                 }
-            }).then(() => {
+            }).then((updatedUser) => {
+                io.emit(updatedUser?.id, updatedUser)
                 return done(null, true);
             })
         })
@@ -147,7 +185,7 @@ UserQueue.process(function (job: Job<BalanceQueueJOB>, done: DoneCallback<any>) 
         })
     }
 
-    if (job.data.type === 'incrementLives'){
+    if (job.data.type === 'incrementLives') {
         prisma.user.update({
             where: {
                 id: job.data.userId
