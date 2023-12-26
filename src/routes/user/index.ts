@@ -1,6 +1,6 @@
 import {Route} from "@/routes/types";
 import UserController from "@/controllers/user";
-import {LoginUserSchema, RegisterUserSchema, UpdateUserSchema} from "@/validator/user";
+import {ChangePasswordUserSchema, LoginUserSchema, RegisterUserSchema, UpdateUserSchema} from "@/validator/user";
 import expressValidator from 'express-joi-validation';
 import Auth from "@/middlewares/auth";
 import OnlyAdmin from "@/middlewares/role";
@@ -24,6 +24,15 @@ export const route: Route[] = [
             RecaptchaMiddleware
         ],
         handler: UserController.login
+    },
+    {
+        path: '/user/change-password',
+        method: 'post',
+        middleware: [
+            Validator.body(ChangePasswordUserSchema),
+            Auth as any
+        ],
+        handler: UserController.changePassword
     },
     {
         path: '/admin/user',

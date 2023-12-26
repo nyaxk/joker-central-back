@@ -11,11 +11,9 @@ export const RecaptchaMiddleware = async (req: Request, res: Response, next: Nex
 
         const {recaptchaToken} = req.body;
 
-        const {data} = await axios.get('https://www.google.com/recaptcha/api/siteverify', {
-            params: {
-                secret: process.env.RECAPTCHA_SECRET,
-                response: recaptchaToken
-            }
+        const {data} = await axios.post('https://challenges.cloudflare.com/turnstile/v0/siteverify',{
+            secret: process.env.RECAPTCHA_SECRET,
+            response: recaptchaToken
         })
 
         if (!data?.success) {

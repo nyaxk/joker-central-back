@@ -3,6 +3,7 @@ import {IAuthRequest} from "@/routes/types";
 import JWT from 'jsonwebtoken';
 import * as process from "process";
 import {prisma} from "@/globals";
+import {UserRole} from "@prisma/client";
 
 export default async function Auth(req: IAuthRequest, res: Response, next: NextFunction) {
     try {
@@ -23,6 +24,16 @@ export default async function Auth(req: IAuthRequest, res: Response, next: NextF
 
         if (!user?.active) {
             return res.status(401).send('Unauthorized')
+        }
+
+        const maintenance = await prisma.config.findFirst({
+            where: {
+                name: 'maintenance'
+            }
+        })
+
+        if (maintenance?.value === "true" && user.role !== UserRole.OWNER && user.role !== UserRole.ADMIN) {
+            return res.status(401).send("Unauthorized")
         }
 
         req.user = user;

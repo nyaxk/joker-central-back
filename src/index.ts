@@ -10,6 +10,7 @@ import {InstanceStatus} from "@prisma/client";
 import InstanceConsumer from "@/consumers";
 import {Paramount} from "@/api";
 import JWT from "jsonwebtoken";
+import {initDatabaseConfig} from "@/helpers/database/init";
 
 const REDIS_URL = process.env.REDIS_URL ?? '';
 
@@ -75,6 +76,7 @@ app.get('*', (_, res) => res.status(401).send('Unauthorized'))
 
 const server = app.listen(PORT, async () => {
     console.log("[+] Servidor iniciado na porta:", PORT)
+    await initDatabaseConfig()
 })
 
 export const io = new Server(server, {

@@ -6,6 +6,7 @@ import {route as PlanRoute} from './plan'
 import {route as ErrorsRoute} from './error'
 import {route as RankingRoute} from './ranking'
 import {route as RechargesHistoryRoute} from './recharges/history'
+import {route as ConfigRoute} from './config'
 import {Route} from "@/routes/types";
 
 export const routes: Route[] = [
@@ -16,5 +17,6 @@ export const routes: Route[] = [
     ...PlanRoute,
     ...RechargesHistoryRoute,
     ...ErrorsRoute,
-    ...RankingRoute
+    ...RankingRoute,
+    ...ConfigRoute
 ]

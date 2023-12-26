@@ -219,7 +219,34 @@ const UserController = () => {
         }
     }
 
-    return {register, login, me, remove, get, update, create}
+    const changePassword = async (req: IAuthRequest, res: Response) => {
+        try {
+            const {currentPassword, newPassword, confirmationPassword} = req.body;
+            const user = req.user;
+
+            if (newPassword !== confirmationPassword) {
+                return res.status(400).send('Senhas não correspondem')
+            }
+            if (!bcrypt.compareSync(currentPassword, user.password)) {
+                return res.status(400).send('Senha atual incorreta')
+            }
+
+            await prisma.user.update({
+                where: {
+                    id: user?.id
+                },
+                data: {
+                    password: bcrypt.hashSync(newPassword, 12)
+                }
+            })
+
+            return res.send('Senha alterada com sucesso !')
+        } catch (e: any) {
+            return res.status(500).send(e?.message)
+        }
+    }
+
+    return {register, login, me, remove, get, update, create, changePassword}
 }
 
 export default UserController()

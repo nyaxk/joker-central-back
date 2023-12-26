@@ -20,3 +20,9 @@ export const UpdateUserSchema = Joi.object({
     active: Joi.any().optional(),
     credits: Joi.any().optional(),
 })
+
+export const ChangePasswordUserSchema = Joi.object({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().required(),
+    confirmationPassword: Joi.string().required(),
+})
