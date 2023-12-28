@@ -188,7 +188,7 @@ class InstanceConsumer {
                 throw new Error('Paused insufficient funds')
             }
 
-            const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}`)
+            const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}?captcha=${user?.captchaKey}`)
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
                 const decrementCredits = await decrementBalance(user?.id ?? '');

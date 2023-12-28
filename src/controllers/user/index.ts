@@ -246,7 +246,27 @@ const UserController = () => {
         }
     }
 
-    return {register, login, me, remove, get, update, create, changePassword}
+    const changeCaptchaKey = async (req: IAuthRequest, res: Response) => {
+        try {
+            const {captchaKey} = req.body;
+            const user = req.user;
+
+            await prisma.user.update({
+                where: {
+                    id: user.id
+                },
+                data: {
+                    captchaKey: captchaKey
+                }
+            })
+
+            return res.send('Captcha alterado com sucesso !')
+        } catch (e: any) {
+            return res.status(500).send(e?.message)
+        }
+    }
+
+    return {register, login, me, remove, get, update, create, changePassword, changeCaptchaKey}
 }
 
 export default UserController()

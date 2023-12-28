@@ -26,3 +26,7 @@ export const ChangePasswordUserSchema = Joi.object({
     newPassword: Joi.string().required(),
     confirmationPassword: Joi.string().required(),
 })
+
+export const ChangeCaptchaUserSchema = Joi.object({
+    captchaKey: Joi.string().required(),
+})

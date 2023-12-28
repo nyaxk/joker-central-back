@@ -1,6 +1,12 @@
 import {Route} from "@/routes/types";
 import UserController from "@/controllers/user";
-import {ChangePasswordUserSchema, LoginUserSchema, RegisterUserSchema, UpdateUserSchema} from "@/validator/user";
+import {
+    ChangeCaptchaUserSchema,
+    ChangePasswordUserSchema,
+    LoginUserSchema,
+    RegisterUserSchema,
+    UpdateUserSchema
+} from "@/validator/user";
 import expressValidator from 'express-joi-validation';
 import Auth from "@/middlewares/auth";
 import OnlyAdmin from "@/middlewares/role";
@@ -33,6 +39,15 @@ export const route: Route[] = [
             Auth as any
         ],
         handler: UserController.changePassword
+    },
+    {
+        path: '/user/change-captcha',
+        method: 'post',
+        middleware: [
+            Validator.body(ChangeCaptchaUserSchema),
+            Auth as any
+        ],
+        handler: UserController.changeCaptchaKey
     },
     {
         path: '/admin/user',

@@ -9,6 +9,9 @@ const InstanceController = () => {
         try {
             const {cc, gate} = req.body;
             const user = req?.user;
+            if(!user?.captchaKey) {
+                return res.status(400).send('Configure no seu perfil a sua key do captcha')
+            }
             if(cc?.length > 400) {
                 return res.status(404).send('Máximo de 400 CC por instância !')
             }

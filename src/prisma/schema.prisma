@@ -42,6 +42,7 @@ model User {
   active          Boolean           @default(false)
   role            UserRole          @default(USER)
   credits         Int?              @default(0)
+  captchaKey      String?
   token           String?
   lives           Int?              @default(0)
   createdAt       DateTime          @default(now())
