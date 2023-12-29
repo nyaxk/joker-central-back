@@ -82,7 +82,8 @@ const UserController = () => {
                 role: user.role,
                 accessToken: token,
                 createdAt: user?.createdAt,
-                active: user?.active
+                active: user?.active,
+                captchaKey: user?.captchaKey
             })
         } catch (e: any) {
             return res.status(500).send(e?.message)
@@ -101,7 +102,8 @@ const UserController = () => {
                 credits: user.credits,
                 role: user.role,
                 createdAt: user?.createdAt,
-                active: user?.active
+                active: user?.active,
+                captchaKey: user?.captchaKey
             })
         } catch (e: any) {
             return res.status(500).send(e?.message)
