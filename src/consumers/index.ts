@@ -188,6 +188,33 @@ class InstanceConsumer {
                 throw new Error('Paused insufficient funds')
             }
 
+            const {data: captchaData} = await axios.post('https://api.capmonster.cloud/getBalance', {
+                clientKey: user?.captchaKey
+            })
+
+            if(captchaData.balance <= 1) {
+                await prisma.instance.update({
+                    where: {
+                        id: instanceData?.id
+                    },
+                    data: {
+                        status: InstanceStatus.PAUSED,
+                        statusMessage: 'Saldo insuficiente do captcha!'
+                    }
+                })
+
+                await emitSocket(instance?.id, {
+                    id: instance?.id,
+                    lives: this.lives,
+                    dies: this.dies,
+                    progress: (this.tested / (this.total)) * 100,
+                    status: InstanceStatus.PAUSED,
+                    statusMessage: 'Saldo insuficiente do captcha!'
+                })
+
+                throw new Error('Paused insufficient funds')
+            }
+
             const {data} = await axios.get(`${instanceData?.gateway?.apiUrl}?lista=${info?.cc}&captcha=${user?.captchaKey}`)
 
             if (data?.toString()?.toUpperCase().includes(instanceData?.gateway?.expectedResponse?.toUpperCase())) {
